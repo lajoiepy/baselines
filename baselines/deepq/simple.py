@@ -13,6 +13,7 @@ from baselines.common.schedules import LinearSchedule
 from baselines import deepq
 from baselines.deepq.replay_buffer import ReplayBuffer, PrioritizedReplayBuffer
 from baselines.deepq.utils import BatchInput, load_state, save_state
+import csv
 
 
 class ActWrapper(object):
@@ -164,9 +165,13 @@ def learn(env,
         See header of baselines/deepq/categorical.py for details on the act function.
     """
     # Create all the functions necessary to train the model
-
     sess = tf.Session()
     sess.__enter__()
+
+    results_file = open('results.csv', 'w', newline='')
+    results_writer = csv.writer(results_file, delimiter=' ',
+                            quotechar='|', quoting=csv.QUOTE_MINIMAL)
+    results_writer.writerow(['Episode', 'Reward'])
 
     # capture the shape outside the closure so that the env object is not serialized
     # by cloudpickle when serializing make_obs_ph
@@ -277,6 +282,7 @@ def learn(env,
                 logger.record_tabular("mean 100 episode reward", mean_100ep_reward)
                 logger.record_tabular("% time spent exploring", int(100 * exploration.value(t)))
                 logger.dump_tabular()
+                results_writer.writerow([num_episodes, mean_100ep_reward])
 
             if (checkpoint_freq is not None and t > learning_starts and
                     num_episodes > 100 and t % checkpoint_freq == 0):
